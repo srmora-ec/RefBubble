@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>RefBubble - Palette Advanced</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; background: #121212; color: #ececec; }
+        .container { border: 2px solid #333; padding: 25px; border-radius: 15px; display: inline-block; background: #1e1e1e; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 600px; width: 90%; }
+        
+        #thumbContainer { display: flex; gap: 10px; justify-content: center; margin: 20px 0; min-height: 100px; padding: 10px; border: 1px dashed #444; border-radius: 8px; background: #181818; flex-wrap: wrap; }
+        .thumb-wrapper { position: relative; width: 80px; height: 80px; cursor: grab; border: 2px solid transparent; }
+        .thumb-wrapper.dragging { opacity: 0.5; border: 2px solid #00ca71; }
+        .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #333; }
+        .btn-del { position: absolute; top: -8px; right: -8px; background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; font-weight: bold; line-height: 20px; padding: 0; z-index: 10; }
+        
+        #preview { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #444; }
+        
+        .option-box { margin: 15px 0; padding: 15px; background: #252525; border-radius: 8px; font-size: 0.9em; border: 1px dashed #444; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+        .control-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        
+        button { padding: 14px 28px; cursor: pointer; background: #00ca71; color: white; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; width: 100%; font-size: 1em; margin-bottom: 5px; }
+        button:hover:not(:disabled) { background: #00a35c; transform: translateY(-2px); }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; border: 1px solid #444; }
+        
+        .btn-add { background: #333; margin-bottom: 15px; border: 1px solid #444; }
+        .btn-palette { background: #3498db; margin-bottom: 10px; }
+        .btn-palette.active { background: #e67e22; border: 2px solid white; }
+
+        .hint { font-size: 0.8em; color: #777; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h3>RefBubble</h3>
+        
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        <button id="btnAdd" class="btn-add" onclick="document.getElementById('fileInput').click()">➕ Añadir Imagen (Máx 10)</button>
+        
+        <div id="thumbContainer"></div>
+
+        <button id="togglePalette" class="btn-palette">🎨 Activar Paletas Inteligentes</button>
+
+        <img id="preview" src="">
+        
+        <div class="option-box">
+            <div style="font-weight: bold; color: #00ca71;">Configuración:</div>
+            
+            <div class="control-row">
+                <span>Colores Diversos (3-8):</span>
+                <input type="range" id="colorCount" min="3" max="8" value="5" oninput="updateUI()">
+                <b id="colorCountVal">5</b>
+            </div>
+
+            <label class="control-row">
+                <input type="radio" name="orientacion" value="horizontal" checked onchange="updateUI()"> ↔️ Horizontal (Paleta a la Izquierda)
+            </label>
+            <label class="control-row">
+                <input type="radio" name="orientacion" value="vertical" onchange="updateUI()"> ↕️ Vertical (Paleta Abajo)
+            </label>
+            <hr style="width: 100%; border: 0; border-top: 1px solid #444;">
+            <label class="control-row">
+                <input type="checkbox" id="useUltraSmall"> 📄 Activar modo documento
+            </label>
+        </div>
+
+        <button id="pipButton">🚀 LANZAR VENTANA FLOTANTE</button>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+    <video id="video" autoplay muted loop style="display:none;"></video>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const thumbContainer = document.getElementById('thumbContainer');
+        const preview = document.getElementById('preview');
+        const canvas = document.getElementById('canvas');
+        const video = document.getElementById('video');
+        const pipButton = document.getElementById('pipButton');
+        const btnAdd = document.getElementById('btnAdd');
+        const togglePalette = document.getElementById('togglePalette');
+        const colorCountInput = document.getElementById('colorCount');
+        const colorCountVal = document.getElementById('colorCountVal');
+        const useUltraSmallCheck = document.getElementById('useUltraSmall');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        let imageElements = [];
+        let showPalette = false;
+
+        togglePalette.onclick = () => {
+            showPalette = !showPalette;
+            togglePalette.classList.toggle('active', showPalette);
+            togglePalette.innerText = showPalette ? "❌ Quitar Paletas" : "🎨 Activar Paletas Inteligentes";
+            updateUI();
+        };
+
+        fileInput.onchange = (e) => {
+            if (imageElements.length >= 8) return;
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => { imageElements.push(img); updateUI(); };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+            fileInput.value = ""; 
+        };
+
+        function updateUI() {
+            colorCountVal.innerText = colorCountInput.value;
+            btnAdd.disabled = imageElements.length >= 8;
+            renderThumbs();
+            generateCombinedImage();
+        }
+
+        function renderThumbs() {
+            thumbContainer.innerHTML = "";
+            imageElements.forEach((img, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'thumb-wrapper';
+                wrapper.draggable = true;
+                wrapper.dataset.index = index;
+                const thumbImg = document.createElement('img');
+                thumbImg.src = img.src;
+                const btnDel = document.createElement('button');
+                btnDel.className = 'btn-del';
+                btnDel.innerText = '×';
+                btnDel.onclick = (e) => { e.stopPropagation(); imageElements.splice(index, 1); updateUI(); };
+                wrapper.appendChild(thumbImg);
+                wrapper.appendChild(btnDel);
+                wrapper.ondragstart = (e) => { wrapper.classList.add('dragging'); e.dataTransfer.setData('text/plain', index); };
+                wrapper.ondragend = () => wrapper.classList.remove('dragging');
+                thumbContainer.appendChild(wrapper);
+            });
+        }
+
+        // Obtener paleta de imagen
+        function getPalette(img, count) {
+            try {
+                const tempCanvas = document.createElement('canvas');
+                const tCtx = tempCanvas.getContext('2d');
+                const sampleSize = 80; // Resolución de muestreo
+                tempCanvas.width = sampleSize;
+                tempCanvas.height = sampleSize;
+                tCtx.drawImage(img, 0, 0, sampleSize, sampleSize);
+                const pixels = tCtx.getImageData(0, 0, sampleSize, sampleSize).data;
+                
+                // Recolectar píxeles únicos con conteo de frecuencia
+                let colorMap = new Map();
+                for (let i = 0; i < pixels.length; i += 4) {
+                    if (pixels[i+3] < 128) continue; // Ignorar transparentes
+                    const key = `${pixels[i]},${pixels[i+1]},${pixels[i+2]}`;
+                    colorMap.set(key, (colorMap.get(key) || 0) + 1);
+                }
+
+                // Convertir a array y filtrar colores muy similares
+                let uniqueColors = Array.from(colorMap.entries()).map(([key, freq]) => {
+                    const [r, g, b] = key.split(',').map(Number);
+                    return { r, g, b, freq };
+                });
+
+                // Si hay pocos colores únicos, duplicar con variaciones
+                if (uniqueColors.length < count) {
+                    const extras = [];
+                    uniqueColors.forEach(c => {
+                        extras.push({ r: Math.min(255, c.r + 20), g: c.g, b: c.b, freq: c.freq * 0.5 });
+                        extras.push({ r: c.r, g: Math.min(255, c.g + 20), b: c.b, freq: c.freq * 0.5 });
+                    });
+                    uniqueColors = uniqueColors.concat(extras);
+                }
+
+                // K-Means mejorado con inicialización K-Means++
+                let centroids = kMeansPlusPlus(uniqueColors, count);
+                
+                for (let iter = 0; iter < 15; iter++) {
+                    // Asignar colores a centroides más cercanos
+                    const clusters = Array.from({ length: count }, () => []);
+                    uniqueColors.forEach(color => {
+                        let minDist = Infinity, bestIdx = 0;
+                        centroids.forEach((c, idx) => {
+                            const dist = colorDistance(color, c);
+                            if (dist < minDist) { minDist = dist; bestIdx = idx; }
+                        });
+                        clusters[bestIdx].push(color);
+                    });
+
+                    // Recalcular centroides con peso por frecuencia
+                    centroids = clusters.map(cluster => {
+                        if (cluster.length === 0) return centroids[Math.floor(Math.random() * centroids.length)];
+                        let totalR = 0, totalG = 0, totalB = 0, totalFreq = 0;
+                        cluster.forEach(c => {
+                            totalR += c.r * c.freq;
+                            totalG += c.g * c.freq;
+                            totalB += c.b * c.freq;
+                            totalFreq += c.freq;
+                        });
+                        return {
+                            r: Math.round(totalR / totalFreq),
+                            g: Math.round(totalG / totalFreq),
+                            b: Math.round(totalB / totalFreq)
+                        };
+                    });
+                }
+
+                // Diversificar: eliminar colores demasiado similares
+                centroids = diversifyColors(centroids, 40); // Umbral de diferencia mínima
+
+                return centroids.map(c => `rgb(${c.r},${c.g},${c.b})`);
+
+            } catch (e) {
+                console.error("Error en extracción:", e);
+                return Array(count).fill('#333');
+            }
+        }
+
+        // K-Means++ para mejor inicialización
+        function kMeansPlusPlus(colors, k) {
+            if (colors.length === 0) return [];
+            const centroids = [colors[Math.floor(Math.random() * colors.length)]];
+            
+            while (centroids.length < k) {
+                const distances = colors.map(c => {
+                    return Math.min(...centroids.map(cent => colorDistance(c, cent)));
+                });
+                const totalDist = distances.reduce((a, b) => a + b, 0);
+                let rand = Math.random() * totalDist;
+                for (let i = 0; i < colors.length; i++) {
+                    rand -= distances[i];
+                    if (rand <= 0) {
+                        centroids.push(colors[i]);
+                        break;
+                    }
+                }
+            }
+            return centroids;
+        }
+
+        // Distancia euclidiana en espacio RGB
+        function colorDistance(c1, c2) {
+            return Math.sqrt(
+                Math.pow(c1.r - c2.r, 2) +
+                Math.pow(c1.g - c2.g, 2) +
+                Math.pow(c1.b - c2.b, 2)
+            );
+        }
+
+        // Eliminar colores muy similares
+        function diversifyColors(colors, minDist) {
+            const result = [colors[0]];
+            for (let i = 1; i < colors.length; i++) {
+                let tooSimilar = false;
+                for (let j = 0; j < result.length; j++) {
+                    if (colorDistance(colors[i], result[j]) < minDist) {
+                        tooSimilar = true;
+                        break;
+                    }
+                }
+                if (!tooSimilar) result.push(colors[i]);
+            }
+            return result;
+        }
+
+        async function generateCombinedImage() {
+            if (imageElements.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            const orientacion = document.querySelector('input[name="orientacion"]:checked').value;
+            const numColores = parseInt(colorCountInput.value);
+            const refSize = 800; 
+            const paletteThickness = 80;
+
+            let finalCanvasWidth, finalCanvasHeight;
+            const items = imageElements.map(img => {
+                const ratio = img.width / img.height;
+                return { img, ratio, palette: getPalette(img, numColores) };
+            });
+
+            if (orientacion === 'horizontal') {
+                const totalW = items.reduce((acc, item) => acc + (refSize * item.ratio) + (showPalette ? paletteThickness : 0), 0);
+                canvas.width = totalW;
+                canvas.height = refSize;
+                let x = 0;
+                items.forEach(item => {
+                    const currentW = refSize * item.ratio;
+                    if(showPalette) {
+                        const boxH = refSize / numColores;
+                        item.palette.forEach((color, i) => {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(x, i * boxH, paletteThickness, boxH);
+                            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                            ctx.strokeRect(x, i * boxH, paletteThickness, boxH);
+                        });
+                        x += paletteThickness;
+                    }
+                    ctx.drawImage(item.img, x, 0, currentW, refSize);
+                    x += currentW;
+                });
+            } else {
+                const totalH = items.reduce((acc, item) => acc + (refSize / item.ratio) + (showPalette ? paletteThickness : 0), 0);
+                canvas.width = refSize;
+                canvas.height = totalH;
+                let y = 0;
+                items.forEach(item => {
+                    const currentH = refSize / item.ratio;
+                    ctx.drawImage(item.img, 0, y, refSize, currentH);
+                    y += currentH;
+                    if(showPalette) {
+                        const boxW = refSize / numColores;
+                        item.palette.forEach((color, i) => {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(i * boxW, y, boxW, paletteThickness);
+                            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                            ctx.strokeRect(i * boxW, y, boxW, paletteThickness);
+                        });
+                        y += paletteThickness;
+                    }
+                });
+            }
+
+            preview.src = canvas.toDataURL('image/png');
+            preview.style.display = 'inline-block';
+            
+            video.srcObject = canvas.captureStream(30);
+            return new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
+            });
+        }
+
+        pipButton.onclick = async () => {
+            if (imageElements.length === 0) return;
+            
+            await generateCombinedImage();
+
+            if (useUltraSmallCheck.checked && 'documentPictureInPicture' in window) {
+                try {
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({ 
+                        width: Math.min(window.screen.width * 0.8, canvas.width / 2), 
+                        height: Math.min(window.screen.height * 0.8, canvas.height / 2) 
+                    });
+                    const style = document.createElement('style');
+                    style.textContent = `body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;} img{max-width:100%;max-height:100%;transition:transform 0.1s;cursor:ns-resize;}`;
+                    pipWindow.document.head.appendChild(style);
+                    const pipImg = document.createElement('img');
+                    pipImg.src = canvas.toDataURL();
+                    pipWindow.document.body.appendChild(pipImg);
+                    let sc = 1;
+                    pipWindow.addEventListener('wheel', (e) => { 
+                        e.preventDefault(); sc += e.deltaY < 0 ? 0.1 : -0.1; 
+                        sc = Math.max(0.05, sc); pipImg.style.transform = `scale(${sc})`; 
+                    }, { passive: false });
+                } catch (e) { console.error(e); video.requestPictureInPicture(); }
+            } else { 
+                try {
+                    await video.requestPictureInPicture(); 
+                } catch (err) {
+                    console.error("Error al solicitar PiP de video:", err);
+                }
+            }
+        };
+
+        thumbContainer.ondragover = (e) => e.preventDefault();
+        thumbContainer.ondrop = (e) => {
+            e.preventDefault();
+            const from = e.dataTransfer.getData('text/plain');
+            const toEl = e.target.closest('.thumb-wrapper');
+            if(!toEl) return;
+            const to = toEl.dataset.index;
+            const item = imageElements.splice(from, 1)[0];
+            imageElements.splice(to, 0, item);
+            updateUI();
+        };
+    </script>
+</body>
+</html>
