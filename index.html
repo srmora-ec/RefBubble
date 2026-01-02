@@ -1,52 +1,178 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>RefBubble - Palette Advanced</title>
     <link rel="icon" type="image/png" href="logo.png">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; background: #121212; color: #ececec; }
-        .container { border: 2px solid #333; padding: 25px; border-radius: 15px; display: inline-block; background: #1e1e1e; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 600px; width: 90%; }
-        
-        #thumbContainer { display: flex; gap: 10px; justify-content: center; margin: 20px 0; min-height: 100px; padding: 10px; border: 1px dashed #444; border-radius: 8px; background: #181818; flex-wrap: wrap; }
-        .thumb-wrapper { position: relative; width: 80px; height: 80px; cursor: grab; border: 2px solid transparent; }
-        .thumb-wrapper.dragging { opacity: 0.5; border: 2px solid #00ca71; }
-        .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #333; }
-        .btn-del { position: absolute; top: -8px; right: -8px; background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; font-weight: bold; line-height: 20px; padding: 0; z-index: 10; }
-        
-        #preview { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #444; }
-        
-        .option-box { margin: 15px 0; padding: 15px; background: #252525; border-radius: 8px; font-size: 0.9em; border: 1px dashed #444; text-align: left; display: flex; flex-direction: column; gap: 12px; }
-        .control-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        
-        button { padding: 14px 28px; cursor: pointer; background: #00ca71; color: white; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; width: 100%; font-size: 1em; margin-bottom: 5px; }
-        button:hover:not(:disabled) { background: #00a35c; transform: translateY(-2px); }
-        button:disabled { background: #333; color: #666; cursor: not-allowed; border: 1px solid #444; }
-        
-        .btn-add { background: #333; margin-bottom: 15px; border: 1px solid #444; }
-        .btn-palette { background: #3498db; margin-bottom: 10px; }
-        .btn-palette.active { background: #e67e22; border: 2px solid white; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 40px;
+            background: #121212;
+            color: #ececec;
+        }
 
-        .hint { font-size: 0.8em; color: #777; margin-top: 10px; }
+        .container {
+            border: 2px solid #333;
+            padding: 25px;
+            border-radius: 15px;
+            display: inline-block;
+            background: #1e1e1e;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        #thumbContainer {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px dashed #444;
+            border-radius: 8px;
+            background: #181818;
+            flex-wrap: wrap;
+        }
+
+        .thumb-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            cursor: grab;
+            border: 2px solid transparent;
+        }
+
+        .thumb-wrapper.dragging {
+            opacity: 0.5;
+            border: 2px solid #00ca71;
+        }
+
+        .thumb-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .btn-del {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 20px;
+            padding: 0;
+            z-index: 10;
+        }
+
+        #preview {
+            max-width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+            display: none;
+            border: 1px solid #444;
+        }
+
+        .option-box {
+            margin: 15px 0;
+            padding: 15px;
+            background: #252525;
+            border-radius: 8px;
+            font-size: 0.9em;
+            border: 1px dashed #444;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 14px 28px;
+            cursor: pointer;
+            background: #00ca71;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 100%;
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background: #00a35c;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            border: 1px solid #444;
+        }
+
+        .btn-add {
+            background: #333;
+            margin-bottom: 15px;
+            border: 1px solid #444;
+        }
+
+        .btn-palette {
+            background: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .btn-palette.active {
+            background: #e67e22;
+            border: 2px solid white;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 10px;
+        }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <h3>RefBubble</h3>
-        
-        <input type="file" id="fileInput" accept="image/*" style="display: none;">
-        <button id="btnAdd" class="btn-add" onclick="document.getElementById('fileInput').click()">➕ Añadir Imagen (Máx 10)</button>
-        
+
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" multiple>
+        <button id="btnAdd" class="btn-add" onclick="document.getElementById('fileInput').click()">➕ Añadir Imagen (Máx
+            10)</button>
+
         <div id="thumbContainer"></div>
 
         <button id="togglePalette" class="btn-palette">🎨 Activar Paletas Inteligentes</button>
 
         <img id="preview" src="">
-        
+
         <div class="option-box">
             <div style="font-weight: bold; color: #00ca71;">Configuración:</div>
-            
+
             <div class="control-row">
                 <span>Colores Diversos (3-8):</span>
                 <input type="range" id="colorCount" min="3" max="8" value="5" oninput="updateUI()">
@@ -54,10 +180,12 @@
             </div>
 
             <label class="control-row">
-                <input type="radio" name="orientacion" value="horizontal" checked onchange="updateUI()"> ↔️ Horizontal (Paleta a la Izquierda)
+                <input type="radio" name="orientacion" value="horizontal" checked onchange="updateUI()"> ↔️ Horizontal
+                (Paleta a la Izquierda)
             </label>
             <label class="control-row">
-                <input type="radio" name="orientacion" value="vertical" onchange="updateUI()"> ↕️ Vertical (Paleta Abajo)
+                <input type="radio" name="orientacion" value="vertical" onchange="updateUI()"> ↕️ Vertical (Paleta
+                Abajo)
             </label>
             <hr style="width: 100%; border: 0; border-top: 1px solid #444;">
             <label class="control-row">
@@ -96,17 +224,32 @@
         };
 
         fileInput.onchange = (e) => {
-            if (imageElements.length >= 8) return;
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = new Image();
-                img.onload = () => { imageElements.push(img); updateUI(); };
-                img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-            fileInput.value = ""; 
+            const files = Array.from(e.target.files);
+            const espacioDisponible = 10 - imageElements.length; 
+
+            if (espacioDisponible <= 0) {
+                alert("Ya has alcanzado el límite de 10 imágenes.");
+                return;
+            }
+
+            const filesToProcess = files.slice(0, espacioDisponible);
+
+            filesToProcess.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        imageElements.push(img);
+                        updateUI();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            fileInput.value = "";
         };
 
         function updateUI() {
@@ -147,12 +290,12 @@
                 tempCanvas.height = sampleSize;
                 tCtx.drawImage(img, 0, 0, sampleSize, sampleSize);
                 const pixels = tCtx.getImageData(0, 0, sampleSize, sampleSize).data;
-                
+
                 // Recolectar píxeles únicos con conteo de frecuencia
                 let colorMap = new Map();
                 for (let i = 0; i < pixels.length; i += 4) {
-                    if (pixels[i+3] < 128) continue; // Ignorar transparentes
-                    const key = `${pixels[i]},${pixels[i+1]},${pixels[i+2]}`;
+                    if (pixels[i + 3] < 128) continue; // Ignorar transparentes
+                    const key = `${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`;
                     colorMap.set(key, (colorMap.get(key) || 0) + 1);
                 }
 
@@ -174,7 +317,7 @@
 
                 // K-Means mejorado con inicialización K-Means++
                 let centroids = kMeansPlusPlus(uniqueColors, count);
-                
+
                 for (let iter = 0; iter < 15; iter++) {
                     // Asignar colores a centroides más cercanos
                     const clusters = Array.from({ length: count }, () => []);
@@ -220,7 +363,7 @@
         function kMeansPlusPlus(colors, k) {
             if (colors.length === 0) return [];
             const centroids = [colors[Math.floor(Math.random() * colors.length)]];
-            
+
             while (centroids.length < k) {
                 const distances = colors.map(c => {
                     return Math.min(...centroids.map(cent => colorDistance(c, cent)));
@@ -271,7 +414,7 @@
 
             const orientacion = document.querySelector('input[name="orientacion"]:checked').value;
             const numColores = parseInt(colorCountInput.value);
-            const refSize = 800; 
+            const refSize = 800;
             const paletteThickness = 80;
 
             let finalCanvasWidth, finalCanvasHeight;
@@ -287,7 +430,7 @@
                 let x = 0;
                 items.forEach(item => {
                     const currentW = refSize * item.ratio;
-                    if(showPalette) {
+                    if (showPalette) {
                         const boxH = refSize / numColores;
                         item.palette.forEach((color, i) => {
                             ctx.fillStyle = color;
@@ -309,7 +452,7 @@
                     const currentH = refSize / item.ratio;
                     ctx.drawImage(item.img, 0, y, refSize, currentH);
                     y += currentH;
-                    if(showPalette) {
+                    if (showPalette) {
                         const boxW = refSize / numColores;
                         item.palette.forEach((color, i) => {
                             ctx.fillStyle = color;
@@ -324,7 +467,7 @@
 
             preview.src = canvas.toDataURL('image/png');
             preview.style.display = 'inline-block';
-            
+
             video.srcObject = canvas.captureStream(30);
             return new Promise((resolve) => {
                 video.onloadedmetadata = () => {
@@ -336,14 +479,14 @@
 
         pipButton.onclick = async () => {
             if (imageElements.length === 0) return;
-            
+
             await generateCombinedImage();
 
             if (useUltraSmallCheck.checked && 'documentPictureInPicture' in window) {
                 try {
-                    const pipWindow = await window.documentPictureInPicture.requestWindow({ 
-                        width: Math.min(window.screen.width * 0.8, canvas.width / 2), 
-                        height: Math.min(window.screen.height * 0.8, canvas.height / 2) 
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({
+                        width: Math.min(window.screen.width * 0.8, canvas.width / 2),
+                        height: Math.min(window.screen.height * 0.8, canvas.height / 2)
                     });
                     const style = document.createElement('style');
                     style.textContent = `body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;} img{max-width:100%;max-height:100%;transition:transform 0.1s;cursor:ns-resize;}`;
@@ -352,14 +495,14 @@
                     pipImg.src = canvas.toDataURL();
                     pipWindow.document.body.appendChild(pipImg);
                     let sc = 1;
-                    pipWindow.addEventListener('wheel', (e) => { 
-                        e.preventDefault(); sc += e.deltaY < 0 ? 0.1 : -0.1; 
-                        sc = Math.max(0.05, sc); pipImg.style.transform = `scale(${sc})`; 
+                    pipWindow.addEventListener('wheel', (e) => {
+                        e.preventDefault(); sc += e.deltaY < 0 ? 0.1 : -0.1;
+                        sc = Math.max(0.05, sc); pipImg.style.transform = `scale(${sc})`;
                     }, { passive: false });
                 } catch (e) { console.error(e); video.requestPictureInPicture(); }
-            } else { 
+            } else {
                 try {
-                    await video.requestPictureInPicture(); 
+                    await video.requestPictureInPicture();
                 } catch (err) {
                     console.error("Error al solicitar PiP de video:", err);
                 }
@@ -371,7 +514,7 @@
             e.preventDefault();
             const from = e.dataTransfer.getData('text/plain');
             const toEl = e.target.closest('.thumb-wrapper');
-            if(!toEl) return;
+            if (!toEl) return;
             const to = toEl.dataset.index;
             const item = imageElements.splice(from, 1)[0];
             imageElements.splice(to, 0, item);
@@ -379,4 +522,5 @@
         };
     </script>
 </body>
+
 </html>
